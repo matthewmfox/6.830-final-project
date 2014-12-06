@@ -3,6 +3,16 @@
 #include<iostream>
 #include<map>
 
+
+/*
+Firehose: A Database Designed For Streaming Data
+
+Notes:
+DB has many partitions
+Partitions in a DB many host N tables where N >= 1
+
+*/
+
 int numberSeconds;
 
 
