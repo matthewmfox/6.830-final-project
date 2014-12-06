@@ -35,6 +35,25 @@ void createDB(int numberOfPartitions, int numberSeconds, int tSize){
     tableSize = tSize;
 }
 
+/* Function called to execute query */
+void execQuery(string SQLquery, int tableID, sqlite3 db1){
+    int rc1;
+    rc1 = sqlite3_exec(db1, SQLquery, callback, 0, &zErrMsg);
+
+    if( rc1 != SQLITE_OK ){
+        fprintf(stderr, "SQL error: %s\n", zErrMsg);
+    sqlite3_free(zErrMsg);
+    }else{
+    fprintf(stdout, "Query executed successfully\n");
+    }
+
+}
+
+/* Close connection to SQLite3 database */
+void closeTable(sqlite3 db){
+    sqlite3_close(db);
+}
+
 
 int main(){
     sqlite3 *db1, *db2, *db3, *db4;
