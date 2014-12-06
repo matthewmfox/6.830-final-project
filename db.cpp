@@ -4,6 +4,16 @@
 #include<map>
 #include<vector>
 
+
+/*
+Firehose: A Database Designed For Streaming Data
+
+Notes:
+DB has many partitions
+Partitions in a DB many host N tables where N >= 1
+
+*/
+
 int numberSeconds;
 
 class Partition {
@@ -57,6 +67,7 @@ void createDB(int numberOfPartitions, int numberSeconds, int tSize){
 }
 
 /* Function called to execute query */
+<<<<<<< HEAD
 void execQuery(string SQLquery, int tableID, sqlite3 db1){ 
     char *zErrMsg = 0;
     int rc1;
@@ -67,6 +78,20 @@ void execQuery(string SQLquery, int tableID, sqlite3 db1){
     sqlite3_free(zErrMsg);
     }else{
     fprintf(stdout, "Query executed successfully\n");
+=======
+void execQuery(string SQLquery, int tableID, sqlite3 db1){
+    std::vector<Partition>::iterator itr;
+    for ( itr = pList.begin(); itr < pList.end(); ++itr )
+    {
+        int rc1;
+        rc1 = sqlite3_exec(*itr.db1, SQLquery, callback, 0, &zErrMsg);
+        if( rc1 != SQLITE_OK ){
+            fprintf(stderr, "SQL error on partition %d: %s\n", *itr.partitionID, zErrMsg);
+            sqlite3_free(zErrMsg);
+        }else{
+            fprintf(stdout, "Query executed successfully on partition %d \n", *itr.partitionID);
+        }
+>>>>>>> 2a8362bff0fc13f5989f15554ac65d517799d5a2
     }
 
 }
