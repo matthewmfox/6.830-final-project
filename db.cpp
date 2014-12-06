@@ -138,14 +138,16 @@ void printResults(){
 
 int main(){
 
-    cout << "Welcome to the Firestream console";
+    cout << "Welcome to the Firestream console\n";
     cout << "Firestream is a DB designed for streaming data \n \n";
 
     while(true){
-        char * query;
+        string query = "";
         cout << "Please enter an SQL Query:";
-        cin >> query;
-        execQuery(query);
+        getline(cin, query);
+	char q[1024];
+	strcpy(q, query.c_str());
+        execQuery(q);
         printResults();
     }
 
