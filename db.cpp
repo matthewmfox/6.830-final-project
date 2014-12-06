@@ -16,12 +16,16 @@ Partitions in a DB many host N tables where N >= 1
 
 int numberSeconds;
 
+
 static int callback(void *NotUsed, int argc, char **argv, char **azColName){
     int i;
+    std::string str = "";
     for(i=0; i<argc; i++){
-        printf("%s = %s\n", azColName[i], argv[i] ? argv[i] : "NULL");
+        string arg = argv[i] ? argv[i] : "NULL";
+        str +=  arg+"\t";
     }
-    printf("\n");
+    str += "\n";
+    result.push_back(str);
     return 0;
 }
 
@@ -116,7 +120,14 @@ int howManyPartitions(){
     return pList.size();
 }
 
+ 
 
+std:string printResults(){
+    vector<std::string>::iterator row;
+    for (row = results.begin(); row != results.end(); row++) {
+            printf(row);
+    }
+}
 
 
 int main(){
