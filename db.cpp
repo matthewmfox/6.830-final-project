@@ -9,16 +9,16 @@ int numberSeconds;
 
 class Partition {
     public:
-       Partition(int pID, sqlite * dBase, int tSize);
+       Partition(int pID, sqlite3 * dBase, int tSize);
        void lock();
        void unlock(); 
        int maxTableSize;
        bool locked;
-       sqlite * db;
+       sqlite3 * db;
        int partitionID;
 };
 
-Partition::Partition(int pID, sqlite * dBase, int tSize){
+Partition::Partition(int pID, sqlite3 * dBase, int tSize){
     this->maxTableSize = tSize;
     this->db = dBase;
     this->partitionID = pID;
@@ -35,7 +35,7 @@ Partition::unlock(){
 
 vector<Partition> pList;
 
-void createPartition(int partitionID, string partitionName, sqlite * db, int maxTableSize){
+void createPartition(int partitionID, string partitionName, sqlite3 * db, int maxTableSize){
     int message;
     message = sqlite3_open(partitionName, &db);
     if( message ){
