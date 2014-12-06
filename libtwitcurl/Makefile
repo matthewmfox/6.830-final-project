@@ -10,7 +10,7 @@ INCLUDE_DIR = $(STAGING_DIR)/usr/include
 LINCLUDE_DIR = $(STAGING_DIR)/usr/local/include
 LIBRARY_DIR = $(STAGING_DIR)/usr/lib
 LLIBRARY_DIR = $(STAGING_DIR)/usr/local/lib
-LDFLAGS += -Wl,-rpath-link=$(STAGING_DIR)/usr/lib
+LDFLAGS += -rpath=$(STAGING_DIR)/usr/lib
 CC = g++
 REMOVE = rm -f
 COPY = cp
@@ -31,11 +31,15 @@ CINCS =
 
 CFLAGS =$(CDEFS) $(CINCS) $(CSTANDARD)
 
+# $(CC) -dynamiclib -shared -Wl,-install_name,lib$(LIBNAME).dylib.1 $(LDFLAGS) -o lib$(LIBNAME).dylib *.o -L$(LIBRARY_DIR) -lcurl
+
 all: target
 
 target: $(SRC) $(LIBNAME).h
 	$(CC) -Wall -fPIC -c -I$(INCLUDE_DIR) $(SRC) oauthlib.cpp urlencode.cpp base64.cpp HMAC_SHA1.cpp SHA1.cpp
-	$(CC) -shared -Wl,-soname,lib$(LIBNAME).so.1 $(LDFLAGS) -o lib$(LIBNAME).so.1.0 *.o -L$(LIBRARY_DIR) -lcurl
+	$(CC) -dynamiclib -shared -Wl,-install_name,libtwitcurl.dylib.1,-rpath,/usr/lib -o libtwitcurl.dylib.1.0 *.o -L/usr/lib -lcurl
+
+
 
 #clean project.
 clean:
