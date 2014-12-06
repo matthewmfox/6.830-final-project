@@ -44,6 +44,8 @@ Partition::unlock(){
 
 vector<Partition> pList;
 
+vector<string>results;
+
 void createPartition(int partitionID, string partitionName, sqlite3 * db, int maxTableSize){
     int message;
     message = sqlite3_open(partitionName, &db);
@@ -108,13 +110,22 @@ int howManyPartitions(){
 
 static int callback(void *NotUsed, int argc, char **argv, char **azColName){
     int i;
+    string str = "";
     for(i=0; i<argc; i++){
-        printf("%s = %s\n", azColName[i], argv[i] ? argv[i] : "NULL");
+        string arg = argv[i] ? argv[i] : "NULL";
+        str +=  arg+"\t";
     }
-    printf("\n");
+    str += "\n";
+    result.push_back(str);
     return 0;
 }
 
+string printResults(){
+    vector<string>::iterator row;
+    for (row = results.begin(); row != results.end(); row++) {
+            printf(row);
+    }
+}
 
 int main(){
     createDB(int numPartitions, int numSeconds, int maxTableSize);
