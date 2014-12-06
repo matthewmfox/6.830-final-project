@@ -69,14 +69,17 @@ void createDB(int numberOfPartitions, int numberSeconds, int tSize){
 
 /* Function called to execute query */
 void execQuery(string SQLquery, int tableID, sqlite3 db1){
-    int rc1;
-    rc1 = sqlite3_exec(db1, SQLquery, callback, 0, &zErrMsg);
-
-    if( rc1 != SQLITE_OK ){
-        fprintf(stderr, "SQL error: %s\n", zErrMsg);
-    sqlite3_free(zErrMsg);
-    }else{
-    fprintf(stdout, "Query executed successfully\n");
+    std::vector<Partition>::iterator itr;
+    for ( itr = pList.begin(); itr < pList.end(); ++itr )
+    {
+        int rc1;
+        rc1 = sqlite3_exec(*itr.db1, SQLquery, callback, 0, &zErrMsg);
+        if( rc1 != SQLITE_OK ){
+            fprintf(stderr, "SQL error on partition %d: %s\n", *itr.partitionID, zErrMsg);
+            sqlite3_free(zErrMsg);
+        }else{
+            fprintf(stdout, "Query executed successfully on partition %d \n", *itr.partitionID);
+        }
     }
 
 }
