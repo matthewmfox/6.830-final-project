@@ -42,8 +42,10 @@ Partition::unlock(){
     this->locked = false;
 }
 
+/* All partitions  stored here*/
 vector<Partition> pList;
 
+/* Results of last query stored here, row by row */
 vector<string>results;
 
 void createPartition(int partitionID, string partitionName, sqlite3 * db, int maxTableSize){
