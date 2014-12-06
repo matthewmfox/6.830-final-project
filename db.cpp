@@ -1,9 +1,69 @@
 #include<stdio.h>
 #include<sqlite3.h>
 #include<iostream>
-#include<Python/Python.h>
+#include<map>
 
-int numberSeconds, tableSize;
+int numberSeconds;
+
+
+class Partition {
+    public:
+       Partition(int pID, sqlite * dBase, int tSize);
+       void lock();
+       void unlock(); 
+       int maxTableSize;
+       bool locked;
+       sqlite * db;
+       int partitionID;
+}
+
+Partition::Partition(int pID, sqlite * dBase, int tSize){
+    this->maxTableSize = tSize;
+    this->db = dBase;
+    this->partitionID = pID;
+    this->locked = false;
+}
+
+Partition::lock(){
+    this->locked = true;
+}
+
+Partition::unlock(){
+    this->locked = false;
+}
+
+map<int, Partition> pMap;
+
+void createPartition(int partitionID, string partitionName, sqlite * db, int maxTableSize){
+    int message;
+    message = sqlite3_open(partitionName, &db);
+    if( message ){
+        fprintf(stderr, "Can't open database: %s\n", sqlite3_errmsg(db));
+	exit(0);
+    }else{
+	fprintf(stderr, "Opened database successfully\n");
+    }
+    Partition p(partitionID, db, maxTableSize);
+    pMap[partitionID] = p;
+}
+
+void createDB(int numberOfPartitions, int numberSeconds, int tSize){
+    for(int i = 0; i< numberOfPartitions; i++){
+	string pName = "partition" + to_string(i);
+	string dName = "db" + to_string(i);
+        createPartition(i, pName, dName, tSize);
+    }
+    numberSeconds = numSeconds;
+}
+
+void lockPartition(int partitionID){
+    pMap[partitionID].lock();
+}
+
+void unlockPartition(int partitionID){
+    pMap[partitionID].unlock();
+}
+
 
 static int callback(void *NotUsed, int argc, char **argv, char **azColName){
     int i;
@@ -14,26 +74,6 @@ static int callback(void *NotUsed, int argc, char **argv, char **azColName){
     return 0;
 }
 
-void createTable(int tableID, string tableName, string db){
-    int message;
-    message = sqlite3_open(tableName, &db);
-    if( message ){
-        fprintf(stderr, "Can't open database: %s\n", sqlite3_errmsg(db));
-	exit(0);
-    }else{
-	fprintf(stderr, "Opened database successfully\n");
-    }
-}
-
-void createDB(int numberOfPartitions, int numberSeconds, int tSize){
-    for(int i = 0; i< numberOfPartitions; i++){
-	string tName = "table" + to_string(i);
-	string dName = "db" + to_string(i);
-        createTable(i, tName, dName);
-    }
-    numberSeconds = numSeconds;
-    tableSize = tSize;
-}
 
 
 int main(){
