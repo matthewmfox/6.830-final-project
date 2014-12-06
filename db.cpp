@@ -66,14 +66,17 @@ std::vector<Partition> pList;
 
 void createPartition(int partitionID, sqlite3 * db, int maxTableSize){
     int message;
-    message = sqlite3_open("Test", &db);
+    sqlite3 * db2;
+    char name = char(partitionID);
+    char *pName = &name;
+    message = sqlite3_open(pName, &db2);
     if( message ){
         fprintf(stderr, "Can't open database: %s\n", sqlite3_errmsg(db));
 	exit(0);
     }else{
 	fprintf(stderr, "Opened database successfully\n");
     }
-    Partition p(partitionID, db, maxTableSize);
+    Partition p(partitionID, db2, maxTableSize);
     pList.push_back(p);
 }
 
@@ -129,7 +132,6 @@ int howManyPartitions(){
  
 
 void printResults(){
-    vector<std::string>::iterator row;
     for (int i = 0; i < results.size(); i++) {
         printf("%s", results[i].c_str());
     }
@@ -141,8 +143,11 @@ int main(){
     cout << "Welcome to the Firestream console\n";
     cout << "Firestream is a DB designed for streaming data \n \n";
 
+    createDB(4, 2, 4);
+
     while(true){
         string query = "";
+	results.clear();
         cout << "Please enter an SQL Query:";
         getline(cin, query);
 	char q[1024];
