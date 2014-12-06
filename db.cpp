@@ -3,6 +3,8 @@
 #include<iostream>
 #include<map>
 #include<vector>
+#include<string>
+using namespace std;
 
 
 /*
@@ -16,16 +18,18 @@ Partitions in a DB many host N tables where N >= 1
 
 int numberSeconds;
 
+/* Results of last query stored here, row by row */
+std::vector<string>results;
 
 static int callback(void *NotUsed, int argc, char **argv, char **azColName){
     int i;
     std::string str = "";
     for(i=0; i<argc; i++){
-        string arg = argv[i] ? argv[i] : "NULL";
+	std::string arg = argv[i] ? argv[i] : "NULL";
         str +=  arg+"\t";
     }
     str += "\n";
-    result.push_back(str);
+    results.push_back(str);
     return 0;
 }
 
@@ -59,9 +63,6 @@ void Partition::unlock(){
 /* All partitions  stored here*/
 std::vector<Partition> pList;
 
-/* Results of last query stored here, row by row */
-std::vector<string>results;
-
 void createPartition(int partitionID, const char * partitionName, sqlite3 * db, int maxTableSize){
     int message;
     message = sqlite3_open(partitionName, &db);
@@ -77,29 +78,28 @@ void createPartition(int partitionID, const char * partitionName, sqlite3 * db, 
 
 void createDB(int numberOfPartitions, int numSeconds, int tSize){
     for(int i = 0; i< numberOfPartitions; i++){
-	const char * pName = "partition" + std::to_string(i);
+	const char * pName = "partition" + to_string(i);
         sqlite3 * db;
-	std::string dName = "db" + std::to_string(i);
+	std::string dName = "db" + to_string(i);
         createPartition(i, pName, db, tSize);
     }
     numberSeconds = numSeconds;
 }
 
 /* Function called to execute query */
-void execQuery(std::string SQLquery){
+void execQuery(char * SQLquery){
     char *zErrMsg = 0;
-    std::vector<Partition>::iterator itr;
-    for ( itr = pList.begin(); itr < pList.end(); ++itr )
+    for ( int j = 0; j < pList.size(); j++ )
     {
-        if(*itr->locked == false){
+        if(pList[j].locked == false){
             
             int status;
-            status = sqlite3_exec(*itr->db, SQLquery, callback, 0, &zErrMsg);
+            status = sqlite3_exec(pList[j].db, SQLquery, callback, 0, &zErrMsg);
             if( status != SQLITE_OK ){
-                fprintf(stderr, "SQL error on partition %d: %s\n", *itr->partitionID, zErrMsg);
+                fprintf(stderr, "SQL error on partition %d: %s\n", pList[j].partitionID, zErrMsg);
                 sqlite3_free(zErrMsg);
             }else{
-                fprintf(stdout, "Query executed successfully on partition %d \n", *itr->partitionID);
+                fprintf(stdout, "Query executed successfully on partition %d \n", pList[j].partitionID);
             }
 
         }
@@ -126,10 +126,10 @@ int howManyPartitions(){
 
  
 
-std:string printResults(){
+void printResults(){
     vector<std::string>::iterator row;
-    for (row = results.begin(); row != results.end(); row++) {
-            printf(row);
+    for (int i = 0; i < results.size(); i++) {
+        printf("%s", results[i].c_str());
     }
 }
 
@@ -140,11 +140,11 @@ int main(){
     cout << "Firestream is a DB designed for streaming data \n \n";
 
     while(true){
-        std:string = query;
+        char * query;
         cout << "Please enter an SQL Query:";
         cin >> query;
-        execQuery(query)
-        cout << printResults;
+        execQuery(query);
+        printResults();
     }
 
     return 0;
