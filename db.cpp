@@ -2,6 +2,7 @@
 #include<sqlite3.h>
 #include<iostream>
 #include<map>
+#include<vector>
 
 int numberSeconds;
 
@@ -32,7 +33,7 @@ Partition::unlock(){
     this->locked = false;
 }
 
-map<int, Partition> pMap;
+vector<Partition> pList;
 
 void createPartition(int partitionID, string partitionName, sqlite * db, int maxTableSize){
     int message;
@@ -44,7 +45,7 @@ void createPartition(int partitionID, string partitionName, sqlite * db, int max
 	fprintf(stderr, "Opened database successfully\n");
     }
     Partition p(partitionID, db, maxTableSize);
-    pMap[partitionID] = p;
+    pList.push_back(p);
 }
 
 void createDB(int numberOfPartitions, int numberSeconds, int tSize){
@@ -77,11 +78,11 @@ void closeTable(sqlite3 db){
 
 
 void lockPartition(int partitionID){
-    pMap[partitionID].lock();
+    pList[partitionID].lock();
 }
 
 void unlockPartition(int partitionID){
-    pMap[partitionID].unlock();
+    pList[partitionID].unlock();
 }
 
 
