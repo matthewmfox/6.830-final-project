@@ -4,6 +4,7 @@
 #include<map>
 #include<vector>
 #include<string>
+#include<sstream>
 using namespace std;
 
 
@@ -63,9 +64,9 @@ void Partition::unlock(){
 /* All partitions  stored here*/
 std::vector<Partition> pList;
 
-void createPartition(int partitionID, const char * partitionName, sqlite3 * db, int maxTableSize){
+void createPartition(int partitionID, sqlite3 * db, int maxTableSize){
     int message;
-    message = sqlite3_open(partitionName, &db);
+    message = sqlite3_open("Test", &db);
     if( message ){
         fprintf(stderr, "Can't open database: %s\n", sqlite3_errmsg(db));
 	exit(0);
@@ -78,10 +79,11 @@ void createPartition(int partitionID, const char * partitionName, sqlite3 * db, 
 
 void createDB(int numberOfPartitions, int numSeconds, int tSize){
     for(int i = 0; i< numberOfPartitions; i++){
-	const char * pName = "partition" + to_string(i);
+	stringstream ss;
+	ss << i;
         sqlite3 * db;
-	std::string dName = "db" + to_string(i);
-        createPartition(i, pName, db, tSize);
+	std::string dName = "db" + ss.str();
+        createPartition(i, db, tSize);
     }
     numberSeconds = numSeconds;
 }
