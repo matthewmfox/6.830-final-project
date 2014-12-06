@@ -87,7 +87,6 @@ void execQuery(string SQLquery){
 
         }
     }
-
 }
 
 /* Close connection to SQLite3 database */
