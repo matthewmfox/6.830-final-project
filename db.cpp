@@ -6,7 +6,7 @@
 
 
 /*
-Firehose: A Database Designed For Streaming Data
+Firestream: A Database Designed For Streaming Data
 
 Notes:
 DB has many partitions
@@ -135,6 +135,17 @@ std:string printResults(){
 
 
 int main(){
+
+    cout << "Welcome to the Firestream console";
+    cout << "Firestream is a DB designed for streaming data \n \n";
+
+    while(true){
+        std:string = query;
+        cout << "Please enter an SQL Query:";
+        cin >> query;
+        execQuery(query)
+        cout << printResults;
+    }
 
     return 0;
 }
