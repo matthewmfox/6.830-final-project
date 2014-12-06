@@ -16,6 +16,20 @@ Partitions in a DB many host N tables where N >= 1
 
 int numberSeconds;
 
+
+static int callback(void *NotUsed, int argc, char **argv, char **azColName){
+    int i;
+    std::string str = "";
+    for(i=0; i<argc; i++){
+        string arg = argv[i] ? argv[i] : "NULL";
+        str +=  arg+"\t";
+    }
+    str += "\n";
+    result.push_back(str);
+    return 0;
+}
+
+
 class Partition {
     public:
        Partition(int pID, sqlite3 * dBase, int tSize);
@@ -34,21 +48,21 @@ Partition::Partition(int pID, sqlite3 * dBase, int tSize){
     this->locked = false;
 }
 
-Partition::lock(){
+void Partition::lock(){
     this->locked = true;
 }
 
-Partition::unlock(){
+void Partition::unlock(){
     this->locked = false;
 }
 
 /* All partitions  stored here*/
-vector<Partition> pList;
+std::vector<Partition> pList;
 
 /* Results of last query stored here, row by row */
-vector<string>results;
+std::vector<string>results;
 
-void createPartition(int partitionID, string partitionName, sqlite3 * db, int maxTableSize){
+void createPartition(int partitionID, const char * partitionName, sqlite3 * db, int maxTableSize){
     int message;
     message = sqlite3_open(partitionName, &db);
     if( message ){
@@ -61,30 +75,31 @@ void createPartition(int partitionID, string partitionName, sqlite3 * db, int ma
     pList.push_back(p);
 }
 
-void createDB(int numberOfPartitions, int numberSeconds, int tSize){
+void createDB(int numberOfPartitions, int numSeconds, int tSize){
     for(int i = 0; i< numberOfPartitions; i++){
-	string pName = "partition" + to_string(i);
-	string dName = "db" + to_string(i);
-        createPartition(i, pName, dName, tSize);
+	const char * pName = "partition" + std::to_string(i);
+        sqlite3 * db;
+	std::string dName = "db" + std::to_string(i);
+        createPartition(i, pName, db, tSize);
     }
     numberSeconds = numSeconds;
 }
 
 /* Function called to execute query */
-void execQuery(string SQLquery){
+void execQuery(std::string SQLquery){
     char *zErrMsg = 0;
     std::vector<Partition>::iterator itr;
     for ( itr = pList.begin(); itr < pList.end(); ++itr )
     {
-        if(*itr.locked == false){
+        if(*itr->locked == false){
             
             int status;
-            status = sqlite3_exec(*itr.db, SQLquery, callback, 0, &zErrMsg);
+            status = sqlite3_exec(*itr->db, SQLquery, callback, 0, &zErrMsg);
             if( status != SQLITE_OK ){
-                fprintf(stderr, "SQL error on partition %d: %s\n", *itr.partitionID, zErrMsg);
+                fprintf(stderr, "SQL error on partition %d: %s\n", *itr->partitionID, zErrMsg);
                 sqlite3_free(zErrMsg);
             }else{
-                fprintf(stdout, "Query executed successfully on partition %d \n", *itr.partitionID);
+                fprintf(stdout, "Query executed successfully on partition %d \n", *itr->partitionID);
             }
 
         }
@@ -92,7 +107,7 @@ void execQuery(string SQLquery){
 }
 
 /* Close connection to SQLite3 database */
-void closeTable(sqlite3 db){
+void closeTable(sqlite3 * db){
     sqlite3_close(db);
 }
 
@@ -109,36 +124,17 @@ int howManyPartitions(){
     return pList.size();
 }
 
-static int callback(void *NotUsed, int argc, char **argv, char **azColName){
-    int i;
-    string str = "";
-    for(i=0; i<argc; i++){
-        string arg = argv[i] ? argv[i] : "NULL";
-        str +=  arg+"\t";
-    }
-    str += "\n";
-    result.push_back(str);
-    return 0;
-}
+ 
 
-string printResults(){
-    vector<string>::iterator row;
+std:string printResults(){
+    vector<std::string>::iterator row;
     for (row = results.begin(); row != results.end(); row++) {
             printf(row);
     }
 }
 
+
 int main(){
-    createDB(int numPartitions, int numSeconds, int maxTableSize);
-
-    /* Create SQL statement */
-    sql = "CREATE TABLE COMPANY(" \
-	  "ID INT PRIMARY KEY     NOT NULL," \
-	  "NAME           TEXT    NOT NULL," \
-	  "AGE            INT     NOT NULL," \
-	  "ADDRESS        CHAR(50)," \
-	  "SALARY         REAL );";
-
 
     return 0;
 }
