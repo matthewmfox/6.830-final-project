@@ -1,6 +1,9 @@
 #include<stdio.h>
 #include<sqlite3.h>
 #include<iostream>
+#include<Python/Python.h>
+
+int numberSeconds, tableSize;
 
 static int callback(void *NotUsed, int argc, char **argv, char **azColName){
     int i;
@@ -11,6 +14,26 @@ static int callback(void *NotUsed, int argc, char **argv, char **azColName){
     return 0;
 }
 
+void createTable(int tableID, string tableName, string db){
+    int message;
+    message = sqlite3_open(tableName, &db);
+    if( message ){
+        fprintf(stderr, "Can't open database: %s\n", sqlite3_errmsg(db));
+	exit(0);
+    }else{
+	fprintf(stderr, "Opened database successfully\n");
+    }
+}
+
+void createDB(int numberOfPartitions, int numberSeconds, int tSize){
+    for(int i = 0; i< numberOfPartitions; i++){
+	string tName = "table" + to_string(i);
+	string dName = "db" + to_string(i);
+        createTable(i, tName, dName);
+    }
+    numberSeconds = numSeconds;
+    tableSize = tSize;
+}
 
 
 int main(){
@@ -33,7 +56,7 @@ int main(){
     }
 
     /* Create SQL statement */
-    sql = "CREATE TABLE COMPANY("  \
+    sql = "CREATE TABLE COMPANY(" \
 	  "ID INT PRIMARY KEY     NOT NULL," \
 	  "NAME           TEXT    NOT NULL," \
 	  "AGE            INT     NOT NULL," \
@@ -42,12 +65,34 @@ int main(){
 
      /* Execute SQL statement */
     rc1 = sqlite3_exec(db1, sql, callback, 0, &zErrMsg);
+    rc2 = sqlite3_exec(db2, sql, callback, 0, &zErrMsg);
+    rc3 = sqlite3_exec(db3, sql, callback, 0, &zErrMsg);
+    rc4 = sqlite3_exec(db4, sql, callback, 0, &zErrMsg);
     if( rc1 != SQLITE_OK ){
-        fprintf(stderr, "SQL error: %s\n", zErrMsg);
+        fprintf(stderr, "SQL error 1: %s\n", zErrMsg);
 	sqlite3_free(zErrMsg);
     }else{
-	fprintf(stdout, "Table created successfully\n");
+	fprintf(stdout, "Table 1 created successfully\n");
     }
+    if( rc2 != SQLITE_OK ){
+        fprintf(stderr, "SQL error 2: %s\n", zErrMsg);
+	sqlite3_free(zErrMsg);
+    }else{
+	fprintf(stdout, "Table 2 created successfully\n");
+    }
+    if( rc3 != SQLITE_OK ){
+        fprintf(stderr, "SQL error 3: %s\n", zErrMsg);
+	sqlite3_free(zErrMsg);
+    }else{
+	fprintf(stdout, "Table 3 created successfully\n");
+    }
+    if( rc4 != SQLITE_OK ){
+        fprintf(stderr, "SQL error 4: %s\n", zErrMsg);
+        sqlite3_free(zErrMsg);
+    }else{
+        fprintf(stdout, "Table 4 created successfully\n");
+    }
+
     sqlite3_close(db1);
     sqlite3_close(db2);
     sqlite3_close(db3);
