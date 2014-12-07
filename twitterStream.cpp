@@ -34,5 +34,17 @@ int main(){
         twitterObj.getLastCurlError( replyMsg );
         printf( "\ntwitterClient:: twitCurl::accountVerifyCredGet error:\n%s\n", replyMsg.c_str() );
     }
+    
+    string searchTerm("NFL");
+    string maxResults("2");
+    replyMsg = "";
+    if( twitterObj.search( searchTerm, maxResults ) ){
+	twitterObj.getLastWebResponse( replyMsg );
+	printf( "\ntwitterClient:: twitCurl::search web response:\n%s\n", replyMsg.c_str() );
+    }
+    else{
+	twitterObj.getLastCurlError( replyMsg );
+	printf( "\ntwitterClient:: twitCurl::search error:\n%s\n", replyMsg.c_str() );
+    }
 }
 
