@@ -347,7 +347,7 @@ int main(){
 
     string searchTerm("NFL");
     string maxResults("2");
-    tweetBlockJsonToVector(getTweets(searchTerm, maxResults));
+    makeSQLquery(tweetBlockJsonToVector(getTweets(searchTerm, maxResults)));
 
     
 
