@@ -33,6 +33,7 @@ std::vector<string>fields;
 
 
 std::map<int, bool> continueMap;
+std::map<int, string> tableSearchTerm;
 
 static int callback(void *NotUsed, int argc, char **argv, char **azColName){
     int i;
@@ -293,9 +294,13 @@ void loadPartition(){
 
 }
 
+
+
 /* Thread loop for continually updating table */
-void endlessTwitterLoop(int tableID, string twitterArguments)
+void *endlessTwitterLoop(void *tID)
 {
+    int tableID = (int)tID;
+    string twitterArguments = tableSearchTerm[tableID];
     bool continueThread = continueMap[tableID];
     int iterations = 0;
     cout << "Started twitter link for table " << tableID;
@@ -310,6 +315,8 @@ void endlessTwitterLoop(int tableID, string twitterArguments)
     cout << "Finished twitter link for table " << tableID;
     cout << "Iterations completed: " << iterations;
 
+    return 0;
+
 }
 
 void stopTwitterLoop(int tableID){
@@ -319,14 +326,14 @@ void stopTwitterLoop(int tableID){
 }
 
 /* Associate a table with a thread that continually updates it */
-void linkTableToStream(int tableID, string twitterArguments){
+void linkTableToStream(int tableID){
 
     if (continueMap.find(tableID) == continueMap.end() ){
         /* Not found, so create thread */
         continueMap[tableID] = true;
         pthread_t loop_thread;
 
-        if(pthread_create(&loop_thread, NULL, endlessTwitterLoop, tableID, twitterArguments) {
+        if(pthread_create(&loop_thread, NULL, endlessTwitterLoop, (void *)tableID) ){
 
             fprintf(stderr, "Error creating thread for table %i \n", tableID);
 
@@ -361,7 +368,7 @@ int main(){
 
     string searchTerm("NFL");
     string maxResults("2");
-    makeSQLquery(tweetBlockJsonToVector(getTweets(searchTerm, maxResults)));
+    makeSQLQuery(tweetBlockJsonToVector(getTweets(searchTerm, maxResults)));
 
     
 
