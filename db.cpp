@@ -6,6 +6,12 @@
 #include <string>
 #include <sstream>
 #include <thread>
+
+#include "rapidjson/document.h"
+#include "rapidjson/writer.h"
+#include "rapidjson/stringbuffer.h"
+#include <iostream>
+
 using namespace std;
 
 
@@ -94,7 +100,7 @@ void createDB(int numberOfPartitions, int numSeconds, int tSize){
     numberSeconds = numSeconds;
 }
 
-/* Function called to execute query */
+/* Function called to execute query on all partitions */
 void execQuery(char * SQLquery){
     char *zErrMsg = 0;
     for ( int j = 0; j < pList.size(); j++ )
@@ -140,6 +146,64 @@ void printResults(){
     }
 }
 
+std::vector< std::vector<string> > tweetBlockJsonToVector(char* json){
+    std::vector< std::vector<string> > allTweetsVector;
+
+    // Parse a JSON string into DOM.
+    //const char* json = "{\"project\":\"rapidjson\",\"stars\":10}";
+    Document allTweets;
+    allTweets.Parse(json);
+
+    for (Value::ConstMemberIterator itr = document.MemberBegin(); itr != document.MemberEnd(); ++itr){
+        std::vector<string> oneTweet = oneTweetJsonToVector(itr);
+
+        allTweetsVector.push_back(oneTweet);
+    }
+
+    return allTweetsVector
+}
+
+std::vector<string> oneTweetJsonToVector(Value& tweet){
+    std::vector<string> singleTweetVector;
+
+    // Grab elements from DOM.
+
+    // 1. Screen name e.g. @JohnSmith
+    Value& userObject = tweet["user"];
+    string screen_name = userObject["screen_name"].GetString();
+
+    // 2. Timestamp e.g. "Wed Aug 27 13:08:45 +0000 2008"
+    string UTCtimestamp = tweet["created_at"].GetString();
+
+    // 3. Tweet test e.g. "This is a tweet, up to 140 characters"
+    string text = tweet["text"].GetString();
+
+    // 4. Latitude, longitude
+    Value& coordinatesObject = tweet["coordinates"];
+    Value& coordsArray= coordinatesObject["coordinates"];
+    double latitude = coordsArray[0];
+    double longitude = coordsArray[1];
+
+    string latString = std::to_string(latitude;
+    string longString = std::to_string(longitude);
+
+    
+    // Push back into vector
+
+    singleTweetVector.push_back(screen_name);
+    singleTweetVector.push_back(UTCtimestamp);
+    singleTweetVector.push_back(text);
+    singleTweetVector.push_back(latString);
+    singleTweetVector.push_back(longString);
+
+    return singleTweet
+
+}
+
+void loadPartition(){
+
+}
+
 /* Thread loop for continually updating table */
 int endlessTwitterLoop(int tableID, string twitterArguments)
 {
@@ -148,7 +212,7 @@ int endlessTwitterLoop(int tableID, string twitterArguments)
     cout << "Started twitter link for table " << tableID;
 
     while(continueThread){
-        /*call twitter and load table partitions */
+        /* call twitter and load table partitions */
         iterations += 1;
     }
     cout << "Finished twitter link for table " << tableID;
