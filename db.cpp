@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <sqlite3.h>
 #include <iostream>
-#include <unordered_map>
+#include <map>
 #include <vector>
 #include <string>
 #include <sstream>
@@ -28,7 +28,7 @@ int numberSeconds;
 /* Results of last query stored here, row by row */
 std::vector<string>results;
 
-std::unordered_map<std::int, bool> continueMap;
+std::map<std::int, bool> continueMap;
 
 static int callback(void *NotUsed, int argc, char **argv, char **azColName){
     int i;
@@ -172,10 +172,10 @@ std::vector< std::vector<string> > tweetBlockJsonToVector(char* json){
 
     // Parse a JSON string into DOM.
     //const char* json = "{\"project\":\"rapidjson\",\"stars\":10}";
-    Document allTweets;
+    rapidjson::Document allTweets;
     allTweets.Parse(json);
 
-    for (Value::ConstMemberIterator itr = document.MemberBegin(); itr != document.MemberEnd(); ++itr){
+    for (rapidjson::Value::ConstMemberIterator itr = document.MemberBegin(); itr != document.MemberEnd(); ++itr){
         std::vector<string> oneTweet = oneTweetJsonToVector(itr);
 
         allTweetsVector.push_back(oneTweet);
