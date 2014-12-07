@@ -306,13 +306,27 @@ void linkTableToStream(int tableID, string twitterArguments){
     if (continueMap.find(tableID) == continueMap.end() ){
         /* Not found, so create thread */
         continueMap[tableID] = true;
-        thread t1(endlessTwitterLoop, tableID, twitterArguments);
+        pthread_t loop_thread;
+
+        if(pthread_create(&loop_thread, NULL, endlessTwitterLoop, tableID, twitterArguments) {
+
+            fprintf(stderr, "Error creating thread for table %i \n", tableID);
+
+        }
     }else{
-        /* Found, so don't create thread */
-        cout << "A loop already exists for TableID " << tableID;
-    }
-    
+        /* Found */
+        if(continueMap[tableID]){
+            // Found and it is true
+            cout << "A loop thread already exists for TableID" << tableID;
+        }else{
+            // Found and it is false
+            cout << "A loop thread already existed for TableID , and old continue flag not deleted" << tableID;
+        }
+
+        }
 }
+
+    
  
 int main(){
 
