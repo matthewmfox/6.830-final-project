@@ -1,11 +1,11 @@
 #include <stdio.h>
 #include <sqlite3.h>
 #include <iostream>
-#include <map>
+#include <unordered_map>
 #include <vector>
 #include <string>
 #include <sstream>
-#include <thread>
+#include <pthread.h>
 using namespace std;
 
 
@@ -94,8 +94,8 @@ void createDB(int numberOfPartitions, int numSeconds, int tSize){
     numberSeconds = numSeconds;
 }
 
-/* Function called to execute query */
-void execQuery(char * SQLquery){
+/* Function called to execute query on all partitions*/
+void execQueryAll(char * SQLquery){
     char *zErrMsg = 0;
     for ( int j = 0; j < pList.size(); j++ )
     {
@@ -113,6 +113,27 @@ void execQuery(char * SQLquery){
         }
     }
 }
+
+/* Function called to execute query on a single partition */
+void execQueryOne(char * SQLquery, int partitionID){
+    char *zErrMsg = 0;
+
+    if(pList[partitionID].locked == true){    
+        int status;
+        status = sqlite3_exec(pList[partitionID].db, SQLquery, callback, 0, &zErrMsg);
+        if( status != SQLITE_OK ){
+            fprintf(stderr, "SQL error on partition %d: %s\n", partitionID, zErrMsg);
+            sqlite3_free(zErrMsg);
+        }else{
+            fprintf(stdout, "Query executed successfully on partition %d \n", partitionID);
+        }
+
+    }
+    else{
+        fprintf(stderr, "Please lock partition %d before writing to it \n", partitionID);
+    }
+}
+
 
 /* Close connection to SQLite3 database */
 void closeTable(sqlite3 * db){
@@ -141,7 +162,7 @@ void printResults(){
 }
 
 /* Thread loop for continually updating table */
-int endlessTwitterLoop(int tableID, string twitterArguments)
+void endlessTwitterLoop(int tableID, string twitterArguments)
 {
 
     int iterations = 0;
@@ -175,7 +196,7 @@ void linkTableToStream(int tableID, string twitterArguments){
     }
     
 }
-
+ 
 int main(){
 
     cout << "Welcome to the Firestream console\n";
@@ -183,14 +204,16 @@ int main(){
 
     createDB(4, 2, 4);
 
+
     while(true){
         string query = "";
+	string partition = "";
 	results.clear();
         cout << "Please enter an SQL Query:";
         getline(cin, query);
 	char q[1024];
 	strcpy(q, query.c_str());
-        execQuery(q);
+        execQueryAll(q);
         printResults();
     }
 
