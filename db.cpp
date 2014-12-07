@@ -1,10 +1,11 @@
-#include<stdio.h>
-#include<sqlite3.h>
-#include<iostream>
-#include<map>
-#include<vector>
-#include<string>
-#include<sstream>
+#include <stdio.h>
+#include <sqlite3.h>
+#include <iostream>
+#include <map>
+#include <vector>
+#include <string>
+#include <sstream>
+#include <thread>
 using namespace std;
 
 
@@ -21,6 +22,8 @@ int numberSeconds;
 
 /* Results of last query stored here, row by row */
 std::vector<string>results;
+
+std::unordered_map<std::int, bool> continueMap;
 
 static int callback(void *NotUsed, int argc, char **argv, char **azColName){
     int i;
@@ -137,6 +140,41 @@ void printResults(){
     }
 }
 
+/* Thread loop for continually updating table */
+int endlessTwitterLoop(int tableID, string twitterArguments)
+{
+
+    int iterations = 0;
+    cout << "Started twitter link for table " << tableID;
+
+    while(continueThread){
+        /*call twitter and load table partitions */
+        iterations += 1;
+    }
+    cout << "Finished twitter link for table " << tableID;
+    cout << "Iterations completed: " << iterations;
+
+}
+
+void stopTwitterLoop(int tableID){
+
+    continueMap[tableID] = false;
+    cout << "Stopping TwitterLoop for table: " << tableID;
+}
+
+/* Associate a table with a thread that continually updates it */
+void linkTableToStream(int tableID, string twitterArguments){
+
+    if (continueMap.find(tableID) == continueMap.end() ){
+        /* Not found, so create thread */
+        continueMap[tableID] = true;
+        std::thread t1(endlessTwitterLoop, tableID, twitterArguments);
+    }else{
+        /* Found, so don't create thread */
+        cout << "A loop already exists for TableID " << tableID;
+    }
+    
+}
 
 int main(){
 
