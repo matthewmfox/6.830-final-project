@@ -29,6 +29,8 @@ int numberSeconds;
 
 /* Results of last query stored here, row by row */
 std::vector<string>results;
+std::vector<string>fields;
+
 
 std::map<int, bool> continueMap;
 
@@ -265,6 +267,11 @@ std::vector< std::vector<string> > tweetBlockJsonToVector(const char* json){
     return allTweetsVector;
 }
 
+string makeSQLQuery(std::vector<std::vector<string>>){
+    string query = "INSERT INTO TWEETS (";
+
+}
+
 
 void loadPartition(){
 
@@ -316,6 +323,11 @@ int main(){
     string searchTerm("NFL");
     string maxResults("2");
     tweetBlockJsonToVector(getTweets(searchTerm, maxResults));
+    fields.push_back(string("ScreenName"));
+    fields.push_back(string("Timestamp"));
+    fields.push_back(string("Text"));
+    fields.push_back(string("Latitude"));
+    fields.push_back(string("Longitude"));
 
     while(true){
         string query = "";
