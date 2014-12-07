@@ -28,7 +28,7 @@ int numberSeconds;
 /* Results of last query stored here, row by row */
 std::vector<string>results;
 
-std::map<std::int, bool> continueMap;
+std::map<int, bool> continueMap;
 
 static int callback(void *NotUsed, int argc, char **argv, char **azColName){
     int i;
@@ -167,19 +167,6 @@ void printResults(){
     }
 }
 
-std::vector< std::vector<string> > tweetBlockJsonToVector(char* json){
-    std::vector< std::vector<string> > allTweetsVector;
-
-    // Parse a JSON string into DOM.
-    //const char* json = "{\"project\":\"rapidjson\",\"stars\":10}";
-    rapidjson::Document allTweets;
-    allTweets.Parse(json);
-
-    for (rapidjson::Value::ConstMemberIterator itr = document.MemberBegin(); itr != document.MemberEnd(); ++itr){
-        std::vector<string> oneTweet = oneTweetJsonToVector(itr);
-    }
-}
-
 std::vector<string> oneTweetJsonToVector(rapidjson::Value& tweet){
     std::vector<string> singleTweetVector;
 
@@ -218,6 +205,7 @@ std::vector<string> oneTweetJsonToVector(rapidjson::Value& tweet){
 }
 
 
+
 std::vector< std::vector<string> > tweetBlockJsonToVector(char* json){
     std::vector< std::vector<string> > allTweetsVector;
 
@@ -235,6 +223,7 @@ std::vector< std::vector<string> > tweetBlockJsonToVector(char* json){
     return allTweetsVector;
 }
 
+
 void loadPartition(){
 
 }
@@ -242,16 +231,13 @@ void loadPartition(){
 /* Thread loop for continually updating table */
 void endlessTwitterLoop(int tableID, string twitterArguments)
 {
-    bool continueThread = continueMap[tableID];
+
     int iterations = 0;
     cout << "Started twitter link for table " << tableID;
 
     while(continueThread){
         /* call twitter and load table partitions */
         iterations += 1;
-
-        // Update continue flag
-        continueThread = continueMap[tableID];
     }
     cout << "Finished twitter link for table " << tableID;
     cout << "Iterations completed: " << iterations;
