@@ -299,7 +299,8 @@ void loadPartition(){
 /* Thread loop for continually updating table */
 void *endlessTwitterLoop(void *tID)
 {
-    int tableID = (int)tID;
+    //int tableID = *(int *)tID;
+    int tableID = (int)(size_t)tID;
     string twitterArguments = tableSearchTerm[tableID];
     bool continueThread = continueMap[tableID];
     int iterations = 0;
