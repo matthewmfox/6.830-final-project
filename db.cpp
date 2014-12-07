@@ -265,9 +265,27 @@ std::vector< std::vector<string> > tweetBlockJsonToVector(const char* json){
     return allTweetsVector;
 }
 
-string makeSQLQuery(std::vector<std::vector<string>>){
-    string query = "INSERT INTO TWEETS (";
-
+string makeSQLQuery(std::vector<std::vector<string>> tweets){
+    string query = "";
+    for(int j = 0; j < tweets.size(); j++){
+	std::vector<string> element = tweets[j];
+        query += "INSERT INTO TWEETS (";
+        for(int i = 0; i < fields.size(); i++){
+            query += fields[i];
+            if(i+1 < fields.size()){
+                query += ", ";
+            }
+        }
+        query += ") VALUES (";
+        for(int i = 0; i < element.size(); i++){
+            query += element[i];
+            if(i+1 < fields.size()){
+                query += ", ";
+            }
+        }
+        query += "); ";
+    }
+    return query;
 }
 
 
@@ -335,14 +353,17 @@ int main(){
 
     createDB(4, 2, 4);
 
-    string searchTerm("NFL");
-    string maxResults("2");
-    tweetBlockJsonToVector(getTweets(searchTerm, maxResults));
     fields.push_back(string("ScreenName"));
     fields.push_back(string("Timestamp"));
     fields.push_back(string("Text"));
     fields.push_back(string("Latitude"));
     fields.push_back(string("Longitude"));
+
+    string searchTerm("NFL");
+    string maxResults("2");
+    makeSQLquery(tweetBlockJsonToVector(getTweets(searchTerm, maxResults)));
+
+    
 
     while(true){
         string query = "";
