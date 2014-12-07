@@ -8,7 +8,9 @@
 #include "rapidjson/document.h"
 #include "rapidjson/writer.h"
 #include "rapidjson/stringbuffer.h"
-#include <iostream>
+#include <fstream>
+#include "twitcurl.h"
+#include "oauthlib.h"
 
 #include <pthread.h>
 using namespace std;
@@ -40,6 +42,46 @@ static int callback(void *NotUsed, int argc, char **argv, char **azColName){
     str += "\n";
     results.push_back(str);
     return 0;
+}
+
+const char * getTweets(string searchTerm, string maxResults){
+    string userName( "moxiefoxxx" );
+    string passWord( "6830pass" );
+
+    twitCurl twitterObj;
+    char tmpBuf[1024];
+    string replyMsg;
+
+    twitterObj.setTwitterUsername( userName );
+    twitterObj.setTwitterPassword( passWord );
+
+    twitterObj.getOAuth().setConsumerKey(string("2aUj45Uf0i7e9UNqvMr3aSp9V"));
+    twitterObj.getOAuth().setConsumerSecret(string("R8npGlJdDtrThsFfqQ1gqFNqAzdFEUX0a4XkqD60gfW31S5UXW"));    
+
+    twitterObj.getOAuth().setOAuthTokenKey( string("2562501762-WyOP68BESntQdBE7RvviyCwdprI87dSbh3puWMh") );
+    twitterObj.getOAuth().setOAuthTokenSecret( string("w1HpguJcGVQz3KiKV0TL6ozYzi01tkahs1w7VoyjbOVc8") );
+
+
+    /* Account credentials verification */
+    if( twitterObj.accountVerifyCredGet()){
+        twitterObj.getLastWebResponse( replyMsg );
+	//printf( "\ntwitterClient:: twitCurl::accountVerifyCredGet web response:\n%s\n", replyMsg.c_str() );
+    }
+    else{
+        twitterObj.getLastCurlError( replyMsg );
+        //printf( "\ntwitterClient:: twitCurl::accountVerifyCredGet error:\n%s\n", replyMsg.c_str() );
+    }
+    
+    replyMsg = "";
+    if( twitterObj.search( searchTerm, maxResults ) ){
+	twitterObj.getLastWebResponse( replyMsg );
+	printf( "\ntwitterClient:: twitCurl::search web response:\n%s\n", replyMsg.c_str() );
+    }
+    else{
+	twitterObj.getLastCurlError( replyMsg );
+	printf( "\ntwitterClient:: twitCurl::search error:\n%s\n", replyMsg.c_str() );
+    }
+    return replyMsg.c_str();
 }
 
 
@@ -206,7 +248,7 @@ std::vector<string> oneTweetJsonToVector(rapidjson::Value& tweet){
 
 
 
-std::vector< std::vector<string> > tweetBlockJsonToVector(char* json){
+std::vector< std::vector<string> > tweetBlockJsonToVector(const char* json){
     std::vector< std::vector<string> > allTweetsVector;
 
     // Parse a JSON string into DOM.
@@ -271,6 +313,9 @@ int main(){
 
     createDB(4, 2, 4);
 
+    string searchTerm("NFL");
+    string maxResults("2");
+    tweetBlockJsonToVector(getTweets(searchTerm, maxResults));
 
     while(true){
         string query = "";
