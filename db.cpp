@@ -167,14 +167,13 @@ void printResults(){
     }
 }
 
-std::vector<string> oneTweetJsonToVector(rapidjson::Value& tweet){
+std::vector<string> oneTweetJsonToVector(const rapidjson::Value& tweet){
     std::vector<string> singleTweetVector;
 
     // Grab elements from DOM.
 
     // 1. Screen name e.g. @JohnSmith
-    rapidjson::Value& userObject = tweet["user"];
-    string screen_name = userObject["screen_name"].GetString();
+    string screen_name = tweet["user"]["screen_name"].GetString();
 
     // 2. Timestamp e.g. "Wed Aug 27 13:08:45 +0000 2008"
     string UTCtimestamp = tweet["created_at"].GetString();
@@ -183,10 +182,8 @@ std::vector<string> oneTweetJsonToVector(rapidjson::Value& tweet){
     string text = tweet["text"].GetString();
 
     // 4. Latitude, longitude
-    rapidjson::Value& coordinatesObject = tweet["coordinates"];
-    rapidjson::Value& coordsArray= coordinatesObject["coordinates"];
-    double latitude = coordsArray[0].GetDouble();
-    double longitude = coordsArray[1].GetDouble();
+    double latitude = tweet["coordinates"]["coordinates"][0].GetDouble();
+    double longitude = tweet["coordinates"]["coordinates"][1].GetDouble();
 
     string latString = std::to_string(latitude);
     string longString = std::to_string(longitude);
@@ -215,7 +212,8 @@ std::vector< std::vector<string> > tweetBlockJsonToVector(char* json){
     allTweets.Parse(json);
 
     for (rapidjson::Value::ConstMemberIterator itr = allTweets.MemberBegin(); itr != allTweets.MemberEnd(); ++itr){
-        std::vector<string> oneTweet = oneTweetJsonToVector(itr);
+        //rapidjson::Value passedObject = itr->name;
+        std::vector<string> oneTweet = oneTweetJsonToVector(itr->name);
 
         allTweetsVector.push_back(oneTweet);
     }
@@ -231,13 +229,16 @@ void loadPartition(){
 /* Thread loop for continually updating table */
 void endlessTwitterLoop(int tableID, string twitterArguments)
 {
-
+    bool continueThread = continueMap[tableID];
     int iterations = 0;
     cout << "Started twitter link for table " << tableID;
 
     while(continueThread){
         /* call twitter and load table partitions */
         iterations += 1;
+
+        // Update continue flag
+        continueThread = continueMap[tableID];
     }
     cout << "Finished twitter link for table " << tableID;
     cout << "Iterations completed: " << iterations;
