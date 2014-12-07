@@ -177,20 +177,16 @@ std::vector< std::vector<string> > tweetBlockJsonToVector(char* json){
 
     for (rapidjson::Value::ConstMemberIterator itr = document.MemberBegin(); itr != document.MemberEnd(); ++itr){
         std::vector<string> oneTweet = oneTweetJsonToVector(itr);
-
-        allTweetsVector.push_back(oneTweet);
     }
-
-    return allTweetsVector
 }
 
-std::vector<string> oneTweetJsonToVector(Value& tweet){
+std::vector<string> oneTweetJsonToVector(rapidjson::Value& tweet){
     std::vector<string> singleTweetVector;
 
     // Grab elements from DOM.
 
     // 1. Screen name e.g. @JohnSmith
-    Value& userObject = tweet["user"];
+    rapidjson::Value& userObject = tweet["user"];
     string screen_name = userObject["screen_name"].GetString();
 
     // 2. Timestamp e.g. "Wed Aug 27 13:08:45 +0000 2008"
@@ -200,12 +196,12 @@ std::vector<string> oneTweetJsonToVector(Value& tweet){
     string text = tweet["text"].GetString();
 
     // 4. Latitude, longitude
-    Value& coordinatesObject = tweet["coordinates"];
-    Value& coordsArray= coordinatesObject["coordinates"];
-    double latitude = coordsArray[0];
-    double longitude = coordsArray[1];
+    rapidjson::Value& coordinatesObject = tweet["coordinates"];
+    rapidjson::Value& coordsArray= coordinatesObject["coordinates"];
+    double latitude = coordsArray[0].GetDouble();
+    double longitude = coordsArray[1].GetDouble();
 
-    string latString = std::to_string(latitude;
+    string latString = std::to_string(latitude);
     string longString = std::to_string(longitude);
 
     
@@ -217,8 +213,26 @@ std::vector<string> oneTweetJsonToVector(Value& tweet){
     singleTweetVector.push_back(latString);
     singleTweetVector.push_back(longString);
 
-    return singleTweet
+    return singleTweetVector;
 
+}
+
+
+std::vector< std::vector<string> > tweetBlockJsonToVector(char* json){
+    std::vector< std::vector<string> > allTweetsVector;
+
+    // Parse a JSON string into DOM.
+    //const char* json = "{\"project\":\"rapidjson\",\"stars\":10}";
+    rapidjson::Document allTweets;
+    allTweets.Parse(json);
+
+    for (rapidjson::Value::ConstMemberIterator itr = allTweets.MemberBegin(); itr != allTweets.MemberEnd(); ++itr){
+        std::vector<string> oneTweet = oneTweetJsonToVector(itr);
+
+        allTweetsVector.push_back(oneTweet);
+    }
+
+    return allTweetsVector;
 }
 
 void loadPartition(){
@@ -228,13 +242,16 @@ void loadPartition(){
 /* Thread loop for continually updating table */
 void endlessTwitterLoop(int tableID, string twitterArguments)
 {
-
+    bool continueThread = continueMap[tableID];
     int iterations = 0;
     cout << "Started twitter link for table " << tableID;
 
     while(continueThread){
         /* call twitter and load table partitions */
         iterations += 1;
+
+        // Update continue flag
+        continueThread = continueMap[tableID];
     }
     cout << "Finished twitter link for table " << tableID;
     cout << "Iterations completed: " << iterations;
@@ -253,7 +270,7 @@ void linkTableToStream(int tableID, string twitterArguments){
     if (continueMap.find(tableID) == continueMap.end() ){
         /* Not found, so create thread */
         continueMap[tableID] = true;
-        std::thread t1(endlessTwitterLoop, tableID, twitterArguments);
+        thread t1(endlessTwitterLoop, tableID, twitterArguments);
     }else{
         /* Found, so don't create thread */
         cout << "A loop already exists for TableID " << tableID;
