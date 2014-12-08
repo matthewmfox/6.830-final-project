@@ -2,7 +2,7 @@
 # Matt Fox - 10/8/14
 
 CC = g++
-CFLAGS = -l sqlite3 -ltwitcurl -std=c++11# -stdlib=libc++
+CFLAGS = -l sqlite3 -ltwitcurl -std=c++11 -stdlib=libc++
 DEPS =
 OBJ = db.o
 OBJ2 = twitterStream.o

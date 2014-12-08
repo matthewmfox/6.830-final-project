@@ -30,10 +30,12 @@ int numberSeconds;
 /* Results of last query stored here, row by row */
 std::vector<string>results;
 std::vector<string>fields;
+std::vector<string>fieldTypes;
 
 
 std::map<int, bool> continueMap;
 std::map<int, string> tableSearchTerm;
+std::map<int, int> tableNumResults;
 
 static int callback(void *NotUsed, int argc, char **argv, char **azColName){
     int i;
@@ -266,9 +268,11 @@ std::vector< std::vector<string> > tweetBlockJsonToVector(const char* json){
     return allTweetsVector;
 }
 
-string makeSQLQuery(std::vector<std::vector<string>> tweets){
+
+string makeSQLQuery(std::vector<std::vector<string>> tweets, int maxTweetsReturned, int begin){
+    int beginID = begin;
     string query = "";
-    for(int j = 0; j < tweets.size(); j++){
+    for(int j = 0; j < min(tweets.size(), maxTweetsReturned); j++){
 	std::vector<string> element = tweets[j];
         query += "INSERT INTO TWEETS (";
         for(int i = 0; i < fields.size(); i++){
@@ -279,7 +283,16 @@ string makeSQLQuery(std::vector<std::vector<string>> tweets){
         }
         query += ") VALUES (";
         for(int i = 0; i < element.size(); i++){
-            query += element[i];
+	    if(i == 0){
+		stringstream ss;
+		ss << beginID;
+		string bID = ss.str();
+	        query += bID;
+		beginID++;
+	    }
+	    else{
+                query += element[i];
+	    }
             if(i+1 < fields.size()){
                 query += ", ";
             }
@@ -289,25 +302,58 @@ string makeSQLQuery(std::vector<std::vector<string>> tweets){
     return query;
 }
 
-
-void loadPartition(){
-
-}
-
-
-
 /* Thread loop for continually updating table */
 void *endlessTwitterLoop(void *tID)
 {
     //int tableID = *(int *)tID;
     int tableID = (int)(size_t)tID;
     string twitterArguments = tableSearchTerm[tableID];
+    int numResults = tableNumResults[tableID];
     bool continueThread = continueMap[tableID];
     int iterations = 0;
     cout << "Started twitter link for table " << tableID;
+    int insertedTweets = 0;
+    int currentPartitionID = 0, nextPartitionID = 1;
+    pList[currentPartitionID].lock();
+    pList[nextPartitionID].lock();
 
     while(continueThread){
         /* call twitter and load table partitions */
+	if(insertedTweets == pList[currentPartitionID].maxTableSize){
+		// We will need to change partitions, drop our old table, and create a new table
+	    insertedTweets = 0;
+	    pList[currentPartitionID].unlock();
+	    currentPartitionID = nextPartitionID;
+	    nextPartitionID = (currentPartitionID+1)%pList.size();
+	    pList[nextPartitionID].lock();
+	    string sql = "DROP TABLE TWEETS;";
+	    execQueryOne(sql, currentPartitionID);
+	    string sql = "CREATE TABLE TWEETS(";
+	    for(int i = 0; i < fields.size(); i++){
+                sql += fields[i] + fieldTypes[i];
+                if(i+1 < fields.size()){
+                    sql += "NOT NULL, ";
+                }
+            }
+	    sql += "NOT NULL );";
+            execQueryOne(sql, currentPartitionID);
+	}
+        
+	std::vector<std::vector<string>> tweets = tweetBlockJsonToVector(getTweets(twitterArguments, numResults));
+	if(pList[currentPartitionID].maxTableSize < (insertedTweets + tweets.size())){
+	      	// We have to limit the number that we insert into this table
+	    string query = makeSQLQuery(tweets, pList[currentPartitionID].maxTableSize - insertedTweets, insertedTweets);
+     	    insertedTweets = tweets.size;
+	    execQueryOne(query, currentPartitionID);
+	}	
+	else{
+	       	// We can just insert all of the tweets into this partition
+	    string query = makeSQLQuery(tweets, tweets.size(), insertedTweets);
+	    insertedTweets += tweets.size();
+	    execQueryOne(query, currentPartitionID);
+	}
+
+	    
         iterations += 1;
 
         // Update continue flag
@@ -361,11 +407,19 @@ int main(){
 
     createDB(4, 2, 4);
 
-    fields.push_back(string("ScreenName"));
-    fields.push_back(string("Timestamp"));
-    fields.push_back(string("Text"));
-    fields.push_back(string("Latitude"));
-    fields.push_back(string("Longitude"));
+    fields.push_back(string("ID"));
+    fields.push_back(string("SCREENNAME"));
+    fields.push_back(string("TIMESTAMP"));
+    fields.push_back(string("TEXT"));
+    fields.push_back(string("LATITUDE"));
+    fields.push_back(string("LONGITUDE"));
+
+    fieldTypes.push_back(string(" INT PRIMARY KEY "));
+    fieldTypes.push_back(string(" CHAR(50) "));
+    fieldTypes.push_back(string(" TIMESTAMP "));
+    fieldTypes.push_back(string(" CHAR(100) "));
+    fieldTypes.push_back(string(" FLOAT(10) "));
+    fieldTypes.push_back(string(" FLOAT(10) "));
 
     string searchTerm("NFL");
     string maxResults("2");
