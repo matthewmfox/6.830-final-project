@@ -35,7 +35,7 @@ std::vector<string>fieldTypes;
 
 std::map<int, bool> continueMap;
 std::map<int, string> tableSearchTerm;
-std::map<int, int> tableNumResults;
+std::map<int, string> tableNumResults;
 
 static int callback(void *NotUsed, int argc, char **argv, char **azColName){
     int i;
@@ -168,7 +168,7 @@ void execQueryAll(char * SQLquery){
 }
 
 /* Function called to execute query on a single partition */
-void execQueryOne(char * SQLquery, int partitionID){
+void execQueryOne(const char * SQLquery, int partitionID){
     char *zErrMsg = 0;
 
     if(pList[partitionID].locked == true){    
@@ -272,7 +272,14 @@ std::vector< std::vector<string> > tweetBlockJsonToVector(const char* json){
 string makeSQLQuery(std::vector<std::vector<string>> tweets, int maxTweetsReturned, int begin){
     int beginID = begin;
     string query = "";
-    for(int j = 0; j < min(tweets.size(), maxTweetsReturned); j++){
+    int stop;
+    if (tweets.size() > maxTweetsReturned){
+        stop = maxTweetsReturned;
+    }
+    else{
+        stop = tweets.size();
+    }
+    for(int j = 0; j < stop; j++){
 	std::vector<string> element = tweets[j];
         query += "INSERT INTO TWEETS (";
         for(int i = 0; i < fields.size(); i++){
@@ -308,7 +315,7 @@ void *endlessTwitterLoop(void *tID)
     //int tableID = *(int *)tID;
     int tableID = (int)(size_t)tID;
     string twitterArguments = tableSearchTerm[tableID];
-    int numResults = tableNumResults[tableID];
+    string numResults = tableNumResults[tableID];
     bool continueThread = continueMap[tableID];
     int iterations = 0;
     cout << "Started twitter link for table " << tableID;
@@ -327,8 +334,8 @@ void *endlessTwitterLoop(void *tID)
 	    nextPartitionID = (currentPartitionID+1)%pList.size();
 	    pList[nextPartitionID].lock();
 	    string sql = "DROP TABLE TWEETS;";
-	    execQueryOne(sql, currentPartitionID);
-	    string sql = "CREATE TABLE TWEETS(";
+	    execQueryOne(sql.c_str(), currentPartitionID);
+	    sql = "CREATE TABLE TWEETS(";
 	    for(int i = 0; i < fields.size(); i++){
                 sql += fields[i] + fieldTypes[i];
                 if(i+1 < fields.size()){
@@ -336,21 +343,21 @@ void *endlessTwitterLoop(void *tID)
                 }
             }
 	    sql += "NOT NULL );";
-            execQueryOne(sql, currentPartitionID);
+            execQueryOne(sql.c_str(), currentPartitionID);
 	}
         
 	std::vector<std::vector<string>> tweets = tweetBlockJsonToVector(getTweets(twitterArguments, numResults));
 	if(pList[currentPartitionID].maxTableSize < (insertedTweets + tweets.size())){
 	      	// We have to limit the number that we insert into this table
 	    string query = makeSQLQuery(tweets, pList[currentPartitionID].maxTableSize - insertedTweets, insertedTweets);
-     	    insertedTweets = tweets.size;
-	    execQueryOne(query, currentPartitionID);
+     	    insertedTweets = tweets.size();
+	    execQueryOne(query.c_str(), currentPartitionID);
 	}	
 	else{
 	       	// We can just insert all of the tweets into this partition
 	    string query = makeSQLQuery(tweets, tweets.size(), insertedTweets);
 	    insertedTweets += tweets.size();
-	    execQueryOne(query, currentPartitionID);
+	    execQueryOne(query.c_str(), currentPartitionID);
 	}
 
 	    
@@ -423,7 +430,7 @@ int main(){
 
     string searchTerm("NFL");
     string maxResults("2");
-    makeSQLQuery(tweetBlockJsonToVector(getTweets(searchTerm, maxResults)));
+    //makeSQLQuery(tweetBlockJsonToVector(getTweets(searchTerm, maxResults)));
 
     
 
