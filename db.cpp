@@ -9,8 +9,10 @@
 #include "rapidjson/writer.h"
 #include "rapidjson/stringbuffer.h"
 #include <fstream>
-#include "twitcurl.h"
-#include "oauthlib.h"
+#include <ctime>
+#include <time.h>
+//#include "twitcurl.h"
+//#include "oauthlib.h"
 
 #include <pthread.h>
 using namespace std;
@@ -49,6 +51,7 @@ static int callback(void *NotUsed, int argc, char **argv, char **azColName){
     return 0;
 }
 
+/*
 const char * getTweets(string searchTerm, string maxResults){
     string userName( "moxiefoxxx" );
     string passWord( "6830pass" );
@@ -67,7 +70,7 @@ const char * getTweets(string searchTerm, string maxResults){
     twitterObj.getOAuth().setOAuthTokenSecret( string("w1HpguJcGVQz3KiKV0TL6ozYzi01tkahs1w7VoyjbOVc8") );
 
 
-    /* Account credentials verification */
+    // Account credentials verification 
     if( twitterObj.accountVerifyCredGet()){
         twitterObj.getLastWebResponse( replyMsg );
 	//printf( "\ntwitterClient:: twitCurl::accountVerifyCredGet web response:\n%s\n", replyMsg.c_str() );
@@ -88,7 +91,7 @@ const char * getTweets(string searchTerm, string maxResults){
     }
     return replyMsg.c_str();
 }
-
+*/
 
 class Partition {
     public:
@@ -310,6 +313,7 @@ string makeSQLQuery(std::vector<std::vector<string>> tweets, int maxTweetsReturn
 }
 
 /* Thread loop for continually updating table */
+/*
 void *endlessTwitterLoop(void *tID)
 {
     //int tableID = *(int *)tID;
@@ -325,7 +329,7 @@ void *endlessTwitterLoop(void *tID)
     pList[nextPartitionID].lock();
 
     while(continueThread){
-        /* call twitter and load table partitions */
+        / call twitter and load table partitions 
 	if(insertedTweets == pList[currentPartitionID].maxTableSize){
 		// We will need to change partitions, drop our old table, and create a new table
 	    insertedTweets = 0;
@@ -373,17 +377,18 @@ void *endlessTwitterLoop(void *tID)
 
 }
 
+
 void stopTwitterLoop(int tableID){
 
     continueMap[tableID] = false;
     cout << "Stopping TwitterLoop for table: " << tableID;
 }
 
-/* Associate a table with a thread that continually updates it */
+// Associate a table with a thread that continually updates it 
 void linkTableToStream(int tableID){
 
     if (continueMap.find(tableID) == continueMap.end() ){
-        /* Not found, so create thread */
+        // Not found, so create thread 
         continueMap[tableID] = true;
         pthread_t loop_thread;
 
@@ -393,7 +398,7 @@ void linkTableToStream(int tableID){
 
         }
     }else{
-        /* Found */
+        // Found 
         if(continueMap[tableID]){
             // Found and it is true
             cout << "A loop thread already exists for TableID" << tableID;
@@ -404,8 +409,63 @@ void linkTableToStream(int tableID){
 
         }
 }
+*/
+void *performanceWrite(void *var){
+    int insertedTweets = 0;
+    int currentPartitionID = 0;
+    int nextPartitionID = 1;
+    int id = 0;
+    clock_t t;
+    while(true){
+	stringstream ss;
+	ss << id;
+	string query = "INSERT INTO TWEETS (ID,SCREENNAME,TEXT) VALUES (" + ss.str() + ", 'moxiefoxxx', 'This');";
+        //cout << "Inserted\n";	
+        if(insertedTweets == pList[currentPartitionID].maxTableSize){
+		// We will need to change partitions, drop our old table, and create a new table
+	    insertedTweets = 0;
+	    pList[currentPartitionID].unlock();
+	    currentPartitionID = nextPartitionID;
+	    nextPartitionID = (currentPartitionID+1)%pList.size();
+	    pList[nextPartitionID].lock();
+	    string sql = "DROP TABLE TWEETS;";
+	    execQueryOne(sql.c_str(), currentPartitionID);
+	    sql = "CREATE TABLE TWEETS(";
+	    for(int i = 0; i < fields.size(); i++){
+                sql += fields[i] + fieldTypes[i];
+                if(i+1 < fields.size()){
+                    sql += "NOT NULL, ";
+                }
+            }
+	    sql += "NOT NULL );";
+            execQueryOne(sql.c_str(), currentPartitionID);
+	}
+        
+	insertedTweets += 1;
+	t = clock();
+	execQueryOne(query.c_str(), currentPartitionID);
+	t = clock() - t;
+	printf("Write took %f seconds\n",((float)t)/CLOCKS_PER_SEC);
+	id++;
+    }
+    return 0;
+}    
 
-    
+
+void performanceRead(int var){
+    string query = "SELECT * from TWEETS;";
+    char q[1024];
+    strcpy(q, query.c_str());
+    clock_t t;
+    while(true){
+	t = clock();
+        execQueryAll(q);
+	t = clock() - t;
+	printf("Read took %f seconds\n",((float)t)/CLOCKS_PER_SEC);
+	//cout << "Read\n";
+	//printResults();
+    }
+}
  
 int main(){
 
@@ -416,23 +476,27 @@ int main(){
 
     fields.push_back(string("ID"));
     fields.push_back(string("SCREENNAME"));
-    fields.push_back(string("TIMESTAMP"));
+    //fields.push_back(string("TIMESTAMP"));
     fields.push_back(string("TEXT"));
-    fields.push_back(string("LATITUDE"));
-    fields.push_back(string("LONGITUDE"));
+    //fields.push_back(string("LATITUDE"));
+    //fields.push_back(string("LONGITUDE"));
 
     fieldTypes.push_back(string(" INT PRIMARY KEY "));
     fieldTypes.push_back(string(" CHAR(50) "));
-    fieldTypes.push_back(string(" TIMESTAMP "));
+    //fieldTypes.push_back(string(" TIMESTAMP "));
     fieldTypes.push_back(string(" CHAR(100) "));
-    fieldTypes.push_back(string(" FLOAT(10) "));
-    fieldTypes.push_back(string(" FLOAT(10) "));
+    //fieldTypes.push_back(string(" FLOAT(10) "));
+    //fieldTypes.push_back(string(" FLOAT(10) "));
 
     string searchTerm("NFL");
     string maxResults("2");
-    //makeSQLQuery(tweetBlockJsonToVector(getTweets(searchTerm, maxResults)));
+ 
+   
+    pthread_t write_thread, read_thread; 
+    int var = 9;
+    pthread_create(&write_thread, NULL, performanceWrite, (void *)var);
 
-    
+    performanceRead(var); 
 
     while(true){
         string query = "";
