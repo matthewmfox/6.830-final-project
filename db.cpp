@@ -153,12 +153,16 @@ void createDB(int numberOfPartitions, int numSeconds, int tSize){
 /* Function called to execute query on all partitions*/
 void execQueryAll(char * SQLquery){
     char *zErrMsg = 0;
+    clock_t t;
     for ( int j = 0; j < pList.size(); j++ )
     {
         if(pList[j].locked == false){
             
             int status;
+	    
+	    t = clock();
             status = sqlite3_exec(pList[j].db, SQLquery, callback, 0, &zErrMsg);
+	    t = clock() - t;
             if( status != SQLITE_OK ){
                 fprintf(stderr, "SQL error on partition %d: %s\n", pList[j].partitionID, zErrMsg);
                 sqlite3_free(zErrMsg);
@@ -168,15 +172,18 @@ void execQueryAll(char * SQLquery){
 
         }
     }
+    printf("Read took %f seconds\n",((float)t)/CLOCKS_PER_SEC);
 }
 
 /* Function called to execute query on a single partition */
 void execQueryOne(const char * SQLquery, int partitionID){
     char *zErrMsg = 0;
-
+    clock_t t;
     if(pList[partitionID].locked == true){    
         int status;
+	t = clock();
         status = sqlite3_exec(pList[partitionID].db, SQLquery, callback, 0, &zErrMsg);
+	t = clock() - t;
         if( status != SQLITE_OK ){
             fprintf(stderr, "SQL error on partition %d: %s\n", partitionID, zErrMsg);
             sqlite3_free(zErrMsg);
@@ -188,6 +195,7 @@ void execQueryOne(const char * SQLquery, int partitionID){
     else{
         fprintf(stderr, "Please lock partition %d before writing to it \n", partitionID);
     }
+    printf("Write took %f seconds\n",((float)t)/CLOCKS_PER_SEC);
 }
 
 
@@ -442,10 +450,10 @@ void *performanceWrite(void *var){
 	}
         
 	insertedTweets += 1;
-	t = clock();
+	//t = clock();
 	execQueryOne(query.c_str(), currentPartitionID);
-	t = clock() - t;
-	printf("Write took %f seconds\n",((float)t)/CLOCKS_PER_SEC);
+	//t = clock() - t;
+	//printf("Write took %f seconds\n",((float)t)/CLOCKS_PER_SEC);
 	id++;
     }
     return 0;
@@ -458,10 +466,10 @@ void performanceRead(int var){
     strcpy(q, query.c_str());
     clock_t t;
     while(true){
-	t = clock();
+	//t = clock();
         execQueryAll(q);
-	t = clock() - t;
-	printf("Read took %f seconds\n",((float)t)/CLOCKS_PER_SEC);
+	//t = clock() - t;
+	//printf("Read took %f seconds\n",((float)t)/CLOCKS_PER_SEC);
 	//cout << "Read\n";
 	//printResults();
     }
