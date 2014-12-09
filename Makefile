@@ -1,5 +1,5 @@
 CC = clang++
-CFLAGS = -l sqlite3 -ltwitcurl -std=c++11 -stdlib=libc++
+CFLAGS = -l sqlite3 -ltwitcurl -std=c++11 -stdlib=libc++# -SQLITE_THREADSAFE=2
 DEPS =
 INC = -I/libtwitcurl/ -I/libtwitcul/include/curl
 OBJ = db.o

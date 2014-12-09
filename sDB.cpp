@@ -10,6 +10,10 @@
 #include <fstream>
 #include <ctime>
 #include <time.h>
+#include <stdio.h>
+#include <time.h>
+#include <unistd.h>
+#include <math.h>
 //#include "twitcurl.h"
 //#include "oauthlib.h"
 
@@ -30,12 +34,23 @@ static int callback(void *NotUsed, int argc, char **argv, char **azColName){
         str +=  arg+"\t";
     }
     str += "\n";
-   // results.push_back(str);
+    results.push_back(str);
     return 0;
 }
 
 
+void printResults(){
+    for (int i = 0; i < results.size(); i++) {
+        printf("%s", results[i].c_str());
+    }
+    printf("Done\n");
+    results.clear();
+}
+
+
 void *performanceWrite(void *var){
+    sqlite3 * db2;
+    sqlite3_open("SingleDB", &db2);
     int id = 0;
     clock_t t;
     int inserted = 0;
@@ -43,6 +58,7 @@ void *performanceWrite(void *var){
     char *zErrMsg = 0;
 
     while(true){
+	while(fmod((float)(clock())/CLOCKS_PER_SEC, 2) != 0){}
 	stringstream ss;
 	ss << id;
 	if(inserted < numTweets){
@@ -54,7 +70,7 @@ void *performanceWrite(void *var){
 	    stringstream s;
 	    s << j;
 	    string sql = "DELETE from TWEETS where ID = " + s.str() + ";";
-	    mess = sqlite3_exec(db, sql.c_str(), callback, 0, &zErrMsg);
+	    mess = sqlite3_exec(db2, sql.c_str(), callback, 0, &zErrMsg);
 
 	    if( mess != SQLITE_OK ){
                 fprintf(stderr, "SQL error: %s\n", zErrMsg);
@@ -66,7 +82,7 @@ void *performanceWrite(void *var){
 
         int status;
 	t = clock();
-        status = sqlite3_exec(db, query.c_str(), callback, 0, &zErrMsg);
+        status = sqlite3_exec(db2, query.c_str(), callback, 0, &zErrMsg);
 	t = clock() - t;
         if( status != SQLITE_OK ){
             fprintf(stderr, "SQL error: %s\n", zErrMsg);
@@ -77,6 +93,8 @@ void *performanceWrite(void *var){
 
 	printf("Write took %f seconds\n",((float)t)/CLOCKS_PER_SEC);
 	id++;
+	printf("ID: %d\n", id);
+	//sleep(1);
     }
     return 0;
 }    
@@ -85,8 +103,10 @@ void *performanceWrite(void *var){
 void performanceRead(int var){
     string query = "SELECT * from TWEETS;";
     clock_t t;
+    int count = 0;
     while(true){
-
+	while(fmod((float)(clock())/CLOCKS_PER_SEC, 2) != 0){} 
+	count ++;
         int status;
 	char *zErrMsg = 0;
 	t = clock();
@@ -96,21 +116,24 @@ void performanceRead(int var){
             fprintf(stderr, "SQL error: %s\n", zErrMsg);
             sqlite3_free(zErrMsg);
         }else{
-            fprintf(stdout, "Read executed successfully\n");
+            fprintf(stdout, "Read executed successfully: %d \n", count);
         }
 	printf("Read took %f seconds\n",((float)t)/CLOCKS_PER_SEC);
 	//cout << "Read\n";
-	//printResults();
+	printResults();
+	//sleep(1);
     }
 }
 
 
 int main(){
 
-    numTweets = 4;
+    numTweets = 8;
 
     int message;
     message = sqlite3_open("SingleDB", &db);
+    sqlite3_config(SQLITE_CONFIG_SERIALIZED);
+    printf("Safe: %d\n", sqlite3_threadsafe());
 
     if( message ){
         fprintf(stderr, "Can't open database: %s\n", sqlite3_errmsg(db));
@@ -122,6 +145,7 @@ int main(){
 
     string query = "CREATE TABLE TWEETS(ID INT PRIMARY KEY NOT NULL, SCREENNAME CHAR(50) NOT NULL, TEXT CHAR(100) NOT NULL);";
 
+    sleep(2);
 
     int status;
     char *zErrMsg = 0;
@@ -130,9 +154,25 @@ int main(){
         fprintf(stderr, "SQL error: %s\n", zErrMsg);
         sqlite3_free(zErrMsg);
     }else{
-        fprintf(stdout, "Query executed successfully\n");
+        fprintf(stdout, "Creation executed successfully\n");
     }
 
+    int id = -1;
+    stringstream ss;
+    ss << id;
+
+    query = "INSERT INTO TWEETS (ID,SCREENNAME,TEXT) VALUES (" + ss.str() + ", 'moxiefoxxx', 'First');";
+    query = "PRAGMA journal_mode = WAL;";
+
+    status = sqlite3_exec(db, query.c_str(), callback, 0, &zErrMsg);
+    if( status != SQLITE_OK ){
+        fprintf(stderr, "SQL error: %s\n", zErrMsg);
+        sqlite3_free(zErrMsg);
+    }else{
+        fprintf(stdout, "Entered WAL\n");
+    }
+
+    sleep(2);
 
     pthread_t write_thread; 
     int var = 0;
