@@ -1,7 +1,4 @@
-# Makefile for Thesis Debugging
-# Matt Fox - 10/8/14
-
-CC = g++
+CC = clang++
 CFLAGS = -l sqlite3 -ltwitcurl -std=c++11 -stdlib=libc++
 DEPS =
 OBJ = db.o
@@ -11,7 +8,7 @@ OBJ2 = twitterStream.o
 	$(CC) -c -o $@ $< $(CFLAGS)
 
 db: $(OBJ)
-	g++ -o $@ $^ $(CFLAGS)
+	clang++ -o $@ $^ $(CFLAGS)
 	
 twitterStream: $(OBJ2)
-	g++ -o $@ $^ $(CFLAGS)
+	clang++ -o $@ $^ $(CFLAGS)
